@@ -3,6 +3,7 @@ const cors = require("cors");
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const { query } = require("express");
 require("dotenv").config();
+const jwt = require("jsonwebtoken");
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -25,6 +26,25 @@ async function run() {
         // Collections
         const categoriesCollection = client.db("truckZone").collection("truckCategory");
         const trucksCollection = client.db("truckZone").collection("allTrucks");
+        const usersCollection = client.db("truckZone").collection("users");
+
+        // add new user, update old user, provide jwt
+        app.put("/user/:email", async (req, res) => {
+            const email = req.params.email;
+            const user = req.body;
+            const filter = { email: email };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: user,
+            };
+            const result = usersCollection.updateOne(filter, updateDoc, options);
+
+            // provide Jwt
+            const token = jwt.sign({ email: user.email }, process.env.ACCESS_TOKEN, {
+                expiresIn: "7d",
+            });
+            res.send({ result, token });
+        });
 
         // get all truck cat
         app.get("/truck-categories", async (req, res) => {
@@ -33,9 +53,9 @@ async function run() {
         });
 
         // get products based on cat
-        app.get("/trucks/:id", async (req, res) => {
-            const id = req.params.id;
-            const query = { catName: id };
+        app.get("/trucks/:cat", async (req, res) => {
+            const cat = req.params.cat;
+            const query = { catName: cat };
             const trucks = await trucksCollection.find(query).toArray();
             res.send(trucks);
         });
@@ -51,6 +71,13 @@ async function run() {
             const truck = req.body;
             const result = await trucksCollection.insertOne(truck);
             res.send(result);
+        });
+
+        // get all users based on user type query
+        app.get("/allUsers", async (req, res) => {
+            const accountType = req.query.accountType;
+            const users = await usersCollection.find({ accountType: accountType }).toArray();
+            res.send(users);
         });
     } finally {
     }
