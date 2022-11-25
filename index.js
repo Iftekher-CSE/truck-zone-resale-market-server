@@ -79,6 +79,13 @@ async function run() {
             const users = await usersCollection.find({ accountType: accountType }).toArray();
             res.send(users);
         });
+
+        // delete a user
+        app.delete("/user/:email", async (req, res) => {
+            const email = req.params.email;
+            const result = await usersCollection.deleteOne({ email: email });
+            res.send(result);
+        });
     } finally {
     }
 }
