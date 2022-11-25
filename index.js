@@ -81,10 +81,24 @@ async function run() {
             res.send(users);
         });
 
+        // make admin
+        app.put("/users/make-admin/:email", async (req, res) => {
+            const email = req.params.email;
+            const filter = { email: email };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: {
+                    admin: true,
+                },
+            };
+            const result = await usersCollection.updateOne(filter, updateDoc, options);
+
+            res.send(result);
+        });
+
         // get a users based on email query
         app.get("/user/:email", async (req, res) => {
             const email = req.params.email;
-            console.log(email);
             const user = await usersCollection.findOne({ email: email });
             res.send(user);
         });
@@ -114,6 +128,13 @@ async function run() {
         app.post("/bookings", async (req, res) => {
             const booking = req.body;
             const result = await bookingsCollection.insertOne(booking);
+            res.send(result);
+        });
+
+        // get booking based on email query
+        app.get("/bookings/:email", async (req, res) => {
+            const email = req.params.email;
+            const result = await bookingsCollection.find({ custEmail: email }).toArray();
             res.send(result);
         });
     } finally {
