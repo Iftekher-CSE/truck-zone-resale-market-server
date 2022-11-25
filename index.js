@@ -137,6 +137,13 @@ async function run() {
             const result = await bookingsCollection.find({ custEmail: email }).toArray();
             res.send(result);
         });
+
+        // get products based on email query
+        app.get("/allTrucks/:email", async (req, res) => {
+            const email = req.params.email;
+            const result = await trucksCollection.find({ sellerEmail: email }).toArray();
+            res.send(result);
+        });
     } finally {
     }
 }
