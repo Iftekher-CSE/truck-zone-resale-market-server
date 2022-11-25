@@ -27,6 +27,7 @@ async function run() {
         const categoriesCollection = client.db("truckZone").collection("truckCategory");
         const trucksCollection = client.db("truckZone").collection("allTrucks");
         const usersCollection = client.db("truckZone").collection("users");
+        const bookingsCollection = client.db("truckZone").collection("bookings");
 
         // add new user, update old user, provide jwt
         app.put("/user/:email", async (req, res) => {
@@ -106,6 +107,13 @@ async function run() {
                 },
             };
             const result = await usersCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        });
+
+        // post a booking
+        app.post("/bookings", async (req, res) => {
+            const booking = req.body;
+            const result = await bookingsCollection.insertOne(booking);
             res.send(result);
         });
     } finally {
