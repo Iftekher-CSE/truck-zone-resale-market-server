@@ -80,10 +80,32 @@ async function run() {
             res.send(users);
         });
 
-        // delete a user
-        app.delete("/user/:email", async (req, res) => {
+        // get a users based on email query
+        app.get("/user/:email", async (req, res) => {
+            const email = req.params.email;
+            console.log(email);
+            const user = await usersCollection.findOne({ email: email });
+            res.send(user);
+        });
+
+        // delete a user from db
+        app.delete("/user/admin/:email", async (req, res) => {
             const email = req.params.email;
             const result = await usersCollection.deleteOne({ email: email });
+            res.send(result);
+        });
+
+        // make seller verified
+        app.put("/user/admin/verify/:email", async (req, res) => {
+            const email = req.params.email;
+            const filter = { email: email };
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: {
+                    sellerVerified: true,
+                },
+            };
+            const result = await usersCollection.updateOne(filter, updatedDoc, options);
             res.send(result);
         });
     } finally {
