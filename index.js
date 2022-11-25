@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const { query } = require("express");
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
@@ -142,6 +142,13 @@ async function run() {
         app.get("/allTrucks/:email", async (req, res) => {
             const email = req.params.email;
             const result = await trucksCollection.find({ sellerEmail: email }).toArray();
+            res.send(result);
+        });
+
+        // delete a product from db
+        app.delete("/allTrucks/:id", async (req, res) => {
+            const id = req.params.id;
+            const result = await trucksCollection.deleteOne({ _id: ObjectId(id) });
             res.send(result);
         });
     } finally {
