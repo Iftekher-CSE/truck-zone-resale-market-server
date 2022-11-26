@@ -53,10 +53,10 @@ async function run() {
             res.send(result);
         });
 
-        // get products based on cat
+        // get not sold products based on cat
         app.get("/trucks/:cat", async (req, res) => {
             const cat = req.params.cat;
-            const query = { catName: cat };
+            const query = { catName: cat, $or: [{ sold: null }, { sold: false }] };
             const trucks = await trucksCollection.find(query).toArray();
             res.send(trucks);
         });
@@ -81,14 +81,15 @@ async function run() {
             res.send(users);
         });
 
-        // make admin
+        // make admin and !admin
         app.put("/users/make-admin/:email", async (req, res) => {
             const email = req.params.email;
             const filter = { email: email };
             const options = { upsert: true };
+            const user = await usersCollection.findOne(filter);
             const updateDoc = {
                 $set: {
-                    admin: true,
+                    admin: !user.admin,
                 },
             };
             const result = await usersCollection.updateOne(filter, updateDoc, options);
@@ -110,14 +111,15 @@ async function run() {
             res.send(result);
         });
 
-        // make seller verified
+        // make seller verified and !verified
         app.put("/user/admin/verify/:email", async (req, res) => {
             const email = req.params.email;
             const filter = { email: email };
             const options = { upsert: true };
+            const user = await usersCollection.findOne(filter);
             const updatedDoc = {
                 $set: {
-                    sellerVerified: true,
+                    sellerVerified: !user.sellerVerified,
                 },
             };
             const result = await usersCollection.updateOne(filter, updatedDoc, options);
@@ -149,6 +151,32 @@ async function run() {
         app.delete("/allTrucks/:id", async (req, res) => {
             const id = req.params.id;
             const result = await trucksCollection.deleteOne({ _id: ObjectId(id) });
+            res.send(result);
+        });
+
+        // make product advertised and not advertised
+        app.put("/allTrucks/advertised/:id", async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const options = { upsert: true };
+            const product = await trucksCollection.findOne(filter);
+            // console.log(isAdvertised);
+            const updatedDoc = {
+                $set: {
+                    advertised: !product.advertised,
+                },
+            };
+            const result = await trucksCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        });
+
+        // get advertised products
+        app.get("/allTruck-advertised", async (req, res) => {
+            const result = await trucksCollection
+                .find({ advertised: true, $or: [{ sold: null }, { sold: false }] })
+                // .find({ advertised: true, sold: true })
+                // .find({ advertised: true, sold: false })
+                .toArray();
             res.send(result);
         });
     } finally {
