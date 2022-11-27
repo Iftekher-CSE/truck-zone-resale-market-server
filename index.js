@@ -4,6 +4,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const { query } = require("express");
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -28,6 +29,7 @@ async function run() {
         const trucksCollection = client.db("truckZone").collection("allTrucks");
         const usersCollection = client.db("truckZone").collection("users");
         const bookingsCollection = client.db("truckZone").collection("bookings");
+        const paymentCollection = client.db("truckZone").collection("payments");
 
         // add new user, update old user, provide jwt
         app.put("/user/:email", async (req, res) => {
@@ -133,11 +135,55 @@ async function run() {
             res.send(result);
         });
 
-        // get booking based on email query
-        app.get("/bookings/:email", async (req, res) => {
-            const email = req.params.email;
+        // post a payment info
+        app.post("/payment", async (req, res) => {
+            const payment = req.body;
+            const result = await paymentCollection.insertOne(payment);
+            // update status in booking collection and product collection
+            const bookingId = payment.bookingId;
+            const productId = payment.productId;
+            const filterBooking = { _id: ObjectId(bookingId) };
+            const filterProduct = { _id: ObjectId(productId) };
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: { sold: true, transactionId: payment.transactionId },
+            };
+            const resultBookingUpdate = await bookingsCollection.updateOne(filterBooking, updatedDoc, options);
+            const resultProductUpdate = await trucksCollection.updateOne(filterProduct, updatedDoc, options);
+            res.send(result);
+        });
+
+        // get booking based on email parameter
+        app.get("/bookings", async (req, res) => {
+            const email = req.query.email;
             const result = await bookingsCollection.find({ custEmail: email }).toArray();
             res.send(result);
+        });
+
+        // get a booking based on id query
+        app.get("/bookings/:id", async (req, res) => {
+            const id = req.params.id;
+            const result = await bookingsCollection.findOne({ _id: ObjectId(id) });
+            res.send(result);
+        });
+
+        // create payment intent
+        app.post("/create-payment-intent", async (req, res) => {
+            const price = req.body.price;
+            console.log("price from payment intent:", price);
+            const amount = parseFloat(price) * 100;
+
+            try {
+                const paymentIntent = await stripe.paymentIntents.create({
+                    amount: amount,
+                    currency: "usd",
+                    // "payment_method_types": ["card"],
+                    payment_method_types: ["card"],
+                });
+                res.send({ clientSecret: paymentIntent.client_secret });
+            } catch (err) {
+                console.log(err);
+            }
         });
 
         // get products based on email query
