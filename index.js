@@ -170,6 +170,22 @@ async function run() {
             res.send(result);
         });
 
+        // make product reported and !reported
+        app.put("/allTrucks/reported/:id", async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const options = { upsert: true };
+            const product = await trucksCollection.findOne(filter);
+            // console.log(isAdvertised);
+            const updatedDoc = {
+                $set: {
+                    reported: !product.reported,
+                },
+            };
+            const result = await trucksCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        });
+
         // get advertised products
         app.get("/allTruck-advertised", async (req, res) => {
             const result = await trucksCollection
@@ -177,6 +193,12 @@ async function run() {
                 // .find({ advertised: true, sold: true })
                 // .find({ advertised: true, sold: false })
                 .toArray();
+            res.send(result);
+        });
+
+        // get all reported products
+        app.get("/allTruck-reported", async (req, res) => {
+            const result = await trucksCollection.find({ reported: true }).toArray();
             res.send(result);
         });
     } finally {
