@@ -113,6 +113,26 @@ async function run() {
             res.send(result);
         });
 
+        // verify admin for useAdmin hook
+        app.get("/users/admin/:email", async (req, res) => {
+            const email = req.params.email;
+            console.log(email);
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            // console.log(user);
+            res.send({ isAdmin: user?.admin === true });
+        });
+
+        // verify account type for hook
+        app.get("/users/account/:email", async (req, res) => {
+            const email = req.params.email;
+            console.log(email);
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            // console.log(user);
+            res.send({ accountType: user?.accountType });
+        });
+
         // make seller verified and !verified
         app.put("/user/admin/verify/:email", async (req, res) => {
             const email = req.params.email;
@@ -164,6 +184,13 @@ async function run() {
         app.get("/bookings/:id", async (req, res) => {
             const id = req.params.id;
             const result = await bookingsCollection.findOne({ _id: ObjectId(id) });
+            res.send(result);
+        });
+
+        // delete a product booking list
+        app.delete("/bookings/:id", async (req, res) => {
+            const id = req.params.id;
+            const result = await bookingsCollection.deleteOne({ _id: ObjectId(id) });
             res.send(result);
         });
 
